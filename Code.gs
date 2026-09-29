@@ -5,7 +5,9 @@
  *
  * Optional Script Properties (Project Settings > Script Properties):
  *   BAND_CODE    - a shared passcode members enter once on their phone
- *   CALENDAR_ID  - band Google Calendar ID; confirmed practices get added to it
+ *   CALENDAR_ID  - band Google Calendar ID; confirmed practices get added to it.
+ *                  Events on it with the word "DNB" in the title (any case) mark
+ *                  do-not-book days; the app shows a warning on those dates.
  */
 
 const CONFIG = {
@@ -21,6 +23,8 @@ const CONFIG = {
   EVENING_START: '19:00',   // 24h, script time zone
   AFTERNOON_START: '13:00',
   DURATION_HOURS: 3,
+  DNB_PATTERN: /\bdnb\b/i,   // whole word "DNB", any capitalization
+  DNB_DAYS_AHEAD: 120,        // how far ahead to look for DNB events
 };
 
 const DATE_HEADERS = ['id', 'date', 'slot', 'note', 'proposedBy', 'createdAt', 'confirmed', 'confirmedSlot', 'eventId'];
@@ -187,6 +191,7 @@ function state_() {
     dates: dates,
     votes: votes,
     calendar: !!PropertiesService.getScriptProperties().getProperty('CALENDAR_ID'),
+    dnb: dnbMap_(dates),
   };
 }
 
@@ -195,6 +200,49 @@ function state_() {
 function calendar_() {
   const id = PropertiesService.getScriptProperties().getProperty('CALENDAR_ID');
   return id ? CalendarApp.getCalendarById(id) : null;
+}
+
+/**
+ * Returns { 'YYYY-MM-DD': ['event title', ...] } for every day covered by a
+ * band-calendar event whose title contains the word DNB. Covers today through
+ * DNB_DAYS_AHEAD days out, or the latest proposed date if that's further.
+ * Warning only: nothing is blocked. Calendar errors never break the app.
+ */
+function dnbMap_(dates) {
+  const out = {};
+  try {
+    const cal = calendar_();
+    if (!cal) return out;
+    const tz = Session.getScriptTimeZone();
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    let end = new Date(start.getTime() + CONFIG.DNB_DAYS_AHEAD * 86400000);
+    (dates || []).forEach(function (d) {
+      const p = d.date.split('-').map(Number);
+      const after = new Date(p[0], p[1] - 1, p[2] + 1);
+      if (after > end) end = after;
+    });
+
+    cal.getEvents(start, end).forEach(function (ev) {
+      const title = ev.getTitle() || '';
+      if (!CONFIG.DNB_PATTERN.test(title)) return;
+      let from, to; // [from, to) day range
+      if (ev.isAllDayEvent()) {
+        from = ev.getAllDayStartDate();
+        to = ev.getAllDayEndDate(); // exclusive
+      } else {
+        from = ev.getStartTime();
+        to = ev.getEndTime();
+        if (to.getTime() === from.getTime()) to = new Date(from.getTime() + 1);
+      }
+      const day = new Date(from); day.setHours(0, 0, 0, 0);
+      for (let i = 0; day < to && i < 366; i++) {
+        const key = Utilities.formatDate(day, tz, 'yyyy-MM-dd');
+        (out[key] = out[key] || []).indexOf(title) === -1 && out[key].push(title);
+        day.setDate(day.getDate() + 1);
+      }
+    });
+  } catch (err) { /* calendar unavailable: just skip the warnings */ }
+  return out;
 }
 
 function createEvent_(date, slot, note) {

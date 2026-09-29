@@ -5,6 +5,7 @@ A minimal, phone-first page where the band suggests practice dates and everyone 
 - **Front end:** `index.html` (one file, no build step), hosted free on GitHub Pages
 - **Back end:** `Code.gs`, a Google Apps Script attached to a Google Sheet (free)
 - **Optional:** confirmed practices are added to the band Google Calendar automatically
+- **Optional:** days marked "DNB" on the band calendar show a red DNB warning in the app
 
 Open `index.html` in a browser before setup and it runs in **demo mode** with sample data, so you can try it first.
 
@@ -70,6 +71,7 @@ Text the link to the group, plus the band code if you set one. Suggest that ever
 - **Suggest dates:** tap **Suggest dates** and pick days. Weeknights default to *Evening*. Weekends default to *Either*, so people can answer *Aft*, *Eve* or *Either*. You can change any of these before sending. You're automatically marked as available on dates you suggest.
 - **Answer:** tap **✓ Can**, **? Maybe** or **✗ Can't** on each date. Tap your answer again to clear it.
 - **At a glance:** each card shows who's in, who can't make it and who hasn't answered yet. A date everyone can make gets an **Everyone's in** badge. **Most free** sorts the best dates to the top.
+- **DNB days:** put an event with the word **DNB** in its title on the band calendar (e.g. "DNB - Dave out of town"; all-day and multi-day events work). Any date on those days gets a red **DNB** badge, and you'll get a heads-up when suggesting or confirming it. It's a warning only, so you can still book it.
 - **Lock it in:** tap **⋯ > Confirm** and the date moves to **Next practice** (and onto the band calendar, if set up). The same menu lets you un-confirm or remove a date.
 - Past dates drop off automatically. The page refreshes itself when you reopen it.
 

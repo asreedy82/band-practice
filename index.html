@@ -110,6 +110,9 @@ h2 {
 }
 .tag.go { background: var(--yes-bg); color: var(--yes); }
 .tag.lock { background: var(--accent); color: var(--accent-ink); }
+.tag.dnb { background: var(--no-bg); color: var(--no); }
+.dnbnote { font-size: 13px; color: var(--no); margin-top: 8px; }
+.pitem .dnbnote { margin: 2px 0 0; font-size: 12px; font-weight: 500; }
 .tally { font-weight: 700; font-size: 15px; white-space: nowrap; text-align: right; }
 .tally small { display: block; font-weight: 500; font-size: 12px; color: var(--muted); }
 .more { margin: -6px -8px 0 0; }
@@ -214,7 +217,7 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch (e) {} },
 };
 
-let state = { members: DEFAULT_MEMBERS, dates: [], votes: [], calendar: false };
+let state = { members: DEFAULT_MEMBERS, dates: [], votes: [], calendar: false, dnb: {} };
 let me = store.get('me');
 let code = store.get('bandCode') || '';
 let sortMode = store.get('sort') || 'date';
@@ -232,6 +235,7 @@ const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())
 const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const today = () => ymd(new Date());
 const isWeekend = s => [0, 6].includes(parse(s).getDay());
+const dnbOn = s => (state.dnb && state.dnb[s]) || []; // DNB event titles on the band calendar for that day
 const SLOT_LABEL = { evening: 'Evening', afternoon: 'Afternoon', open: 'Afternoon or evening' };
 
 function shortName(full) {
@@ -415,6 +419,7 @@ function card(d, t) {
     : [['yes', 'yes', '✓ Can'], ['maybe', 'maybe', '? Maybe'], ['no', 'no', "✗ Can't"]];
 
   const waiting = t.pending.filter(m => m !== me);
+  const dnb = dnbOn(d.date);
   return `
   <div class="card ${d.confirmed ? 'locked' : t.allIn ? 'allin' : ''}">
     <div class="top">
@@ -426,7 +431,7 @@ function card(d, t) {
       <div class="info">
         <div class="title">${esc(slotText)}</div>
         <div class="sub">
-          ${d.confirmed ? '<span class="tag lock">Confirmed</span>' : t.allIn ? '<span class="tag go">Everyone’s in</span>' : ''}
+          ${dnb.length ? '<span class="tag dnb">DNB</span>' : ''}${d.confirmed ? '<span class="tag lock">Confirmed</span>' : t.allIn ? '<span class="tag go">Everyone’s in</span>' : ''}
           ${relDay(d.date)}${d.proposedBy ? ` · from ${esc(shortName(d.proposedBy))}` : ''}${d.onCalendar ? ' · on calendar' : ''}
         </div>
       </div>
@@ -434,6 +439,7 @@ function card(d, t) {
       <button class="icon-btn more" data-more="${esc(d.id)}" aria-label="More">${ICON.more}</button>
     </div>
     ${d.note ? `<div class="note">${esc(d.note)}</div>` : ''}
+    ${dnb.length ? `<div class="dnbnote">⚠ Band calendar: ${dnb.map(esc).join('; ')}</div>` : ''}
     <div class="people">${people}</div>
     ${waiting.length ? `<div class="waiting">Waiting on ${waiting.map(shortName).map(esc).join(', ')}</div>` : ''}
     <div class="votes ${open ? 'four' : ''}">
@@ -508,7 +514,7 @@ function openAdd() {
       const opts = isWeekend(p.date) ? ['afternoon', 'evening', 'open'] : ['evening', 'afternoon'];
       const lbl = { evening: 'Eve', afternoon: 'Aft', open: 'Either' };
       return `<div class="pitem">
-        <span class="lbl">${dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+        <span class="lbl">${dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}${dnbOn(p.date).length ? `<div class="dnbnote">⚠ DNB: ${dnbOn(p.date).map(esc).join('; ')}</div>` : ''}</span>
         <span class="seg">${opts.map(o => `<button data-i="${i}" data-slot="${o}" class="${p.slot === o ? 'on' : ''}">${lbl[o]}</button>`).join('')}</span>
         <button class="x" data-rm="${i}" aria-label="Remove">✕</button>
       </div>`;
@@ -542,6 +548,7 @@ function openAdd() {
       picks.push({ date: v, slot: isWeekend(v) ? 'open' : 'evening' });
       input.value = '';
       draw(s);
+      if (dnbOn(v).length) toast('Heads up: that day is marked DNB on the band calendar.');
     };
     s.querySelector('#addOne').onclick = add;
     input.onchange = add; // phones: picking a date adds it right away
@@ -578,6 +585,7 @@ function openMore(id) {
       <button class="btn danger" data-act="remove">Remove this date</button>
       <button class="btn" data-act="close">Cancel</button>
     </div>
+    ${!d.confirmed && dnbOn(d.date).length ? `<p class="dnbnote">⚠ Marked DNB on the band calendar: ${dnbOn(d.date).map(esc).join('; ')}</p>` : ''}
     ${!d.confirmed && cal ? `<p class="hint">Confirming will lock it in${cal}.</p>` : ''}`, s => {
     s.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
       const act = b.dataset.act;
@@ -611,7 +619,7 @@ function demoLoad() {
   v('a2', 0, 'yes'); v('a2', 1, 'yes'); v('a2', 2, 'yes'); v('a2', 3, 'maybe'); v('a2', 4, 'yes');
   v('a3', 1, 'yes'); v('a3', 0, 'eve'); v('a3', 3, 'aft'); v('a3', 4, 'yes');
   v('a4', 3, 'yes');
-  return { members: m, dates, votes, calendar: false };
+  return { members: m, dates, votes, calendar: false, dnb: { [dates[3].date]: ['DNB - Dave out of town'] } };
 }
 
 async function demoApi(action, p) {
