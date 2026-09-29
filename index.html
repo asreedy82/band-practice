@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16161d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Practice">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Band Practice</title>
+<style>
+:root {
+  --bg: #f4f3ef;
+  --card: #ffffff;
+  --ink: #1b1b22;
+  --muted: #6d6b73;
+  --line: #e4e2dc;
+  --accent: #d9480f;
+  --accent-ink: #ffffff;
+  --yes: #2b8a3e;
+  --yes-bg: #e3f4e6;
+  --maybe: #b07900;
+  --maybe-bg: #fdf1d3;
+  --no: #c92a2a;
+  --no-bg: #fbe4e4;
+  --none-bg: #eeede9;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16161d;
+    --card: #20202a;
+    --ink: #f1f0ec;
+    --muted: #9c9aa5;
+    --line: #30303c;
+    --accent: #ff7a3d;
+    --accent-ink: #16161d;
+    --yes: #69db7c;
+    --yes-bg: #1f3a26;
+    --maybe: #ffd43b;
+    --maybe-bg: #3d3418;
+    --no: #ff8787;
+    --no-bg: #43222a;
+    --none-bg: #2a2a35;
+    --shadow: none;
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: env(safe-area-inset-top) 0 calc(96px + env(safe-area-inset-bottom));
+  min-height: 100vh;
+}
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 0 16px; }
+
+header {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 18px 0 10px;
+}
+header h1 { font-size: 24px; margin: 0; letter-spacing: -.02em; }
+.who {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 999px; background: var(--card);
+  border: 1px solid var(--line); font-size: 14px; font-weight: 600;
+}
+.icon-btn { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); }
+.icon-btn svg { width: 20px; height: 20px; }
+.spin svg { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.banner {
+  margin: 4px 0 12px; padding: 10px 14px; border-radius: 12px;
+  background: var(--maybe-bg); color: var(--ink); font-size: 14px;
+}
+.demo { background: var(--none-bg); color: var(--muted); }
+
+h2 {
+  font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+  margin: 22px 0 10px; display: flex; align-items: center; justify-content: space-between;
+}
+.seg { display: inline-flex; background: var(--none-bg); border-radius: 999px; padding: 2px; text-transform: none; letter-spacing: 0; }
+.seg button { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.seg button.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow);
+}
+.card.allin { border-color: var(--yes); box-shadow: 0 0 0 1px var(--yes) inset, var(--shadow); }
+.card.locked { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset, var(--shadow); }
+.top { display: flex; align-items: flex-start; gap: 12px; }
+.cal {
+  flex: none; width: 50px; text-align: center; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--line); background: var(--bg);
+}
+.cal .m { font-size: 11px; font-weight: 700; text-transform: uppercase; background: var(--accent); color: var(--accent-ink); padding: 2px 0; }
+.cal .d { font-size: 20px; font-weight: 700; padding: 2px 0 0; }
+.cal .w { font-size: 11px; color: var(--muted); padding-bottom: 3px; }
+.info { flex: 1; min-width: 0; }
+.title { font-weight: 700; font-size: 17px; }
+.sub { color: var(--muted); font-size: 13px; }
+.tag {
+  display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  margin-right: 4px; vertical-align: 2px;
+}
+.tag.go { background: var(--yes-bg); color: var(--yes); }
+.tag.lock { background: var(--accent); color: var(--accent-ink); }
+.tally { font-weight: 700; font-size: 15px; white-space: nowrap; text-align: right; }
+.tally small { display: block; font-weight: 500; font-size: 12px; color: var(--muted); }
+.more { margin: -6px -8px 0 0; }
+
+.people { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
+.p { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--none-bg); color: var(--muted); }
+.p.yes { background: var(--yes-bg); color: var(--yes); }
+.p.maybe { background: var(--maybe-bg); color: var(--maybe); }
+.p.no { background: var(--no-bg); color: var(--no); text-decoration: line-through; }
+.p.me { outline: 1.5px solid currentColor; outline-offset: -1.5px; }
+.note { font-size: 14px; margin-top: 8px; }
+.waiting { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.votes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.votes.four { grid-template-columns: repeat(4, 1fr); }
+.votes button {
+  padding: 11px 4px; border-radius: 12px; font-weight: 700; font-size: 14px;
+  background: var(--none-bg); color: var(--muted); transition: transform .08s;
+}
+.votes button:active { transform: scale(.96); }
+.votes button.on.yes { background: var(--yes); color: var(--card); }
+.votes button.on.maybe { background: var(--maybe); color: var(--card); }
+.votes button.on.no { background: var(--no); color: var(--card); }
+
+.empty { text-align: center; color: var(--muted); padding: 36px 16px; }
+
+.fab {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  background: var(--accent); color: var(--accent-ink); font-weight: 700;
+  padding: 14px 24px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  display: flex; align-items: center; gap: 8px; z-index: 5;
+}
+
+/* sheets */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 10; display: flex; align-items: flex-end; justify-content: center; }
+.sheet {
+  background: var(--card); width: 100%; max-width: 560px; border-radius: 20px 20px 0 0;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); max-height: 88vh; overflow: auto;
+  animation: up .18s ease-out;
+}
+@keyframes up { from { transform: translateY(30px); opacity: .5; } }
+.sheet h3 { margin: 0 0 14px; font-size: 19px; }
+.row { display: flex; gap: 8px; align-items: center; }
+input[type=date], input[type=text], input[type=password] {
+  font: inherit; font-size: 16px; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; width: 100%;
+  min-height: 46px;
+}
+.btn { padding: 12px 18px; border-radius: 12px; font-weight: 700; background: var(--none-bg); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.danger { color: var(--no); }
+.btn:disabled { opacity: .45; }
+.btn.block { width: 100%; }
+.pending { margin: 14px 0; }
+.pitem { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.pitem .lbl { flex: 1; font-weight: 600; }
+.pitem .seg button { font-size: 12px; padding: 5px 9px; }
+.x { color: var(--muted); width: 30px; height: 30px; }
+.hint { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.actions { display: flex; flex-direction: column; gap: 8px; }
+.actions .btn { text-align: left; }
+.footer { display: flex; gap: 8px; margin-top: 16px; }
+.footer .btn { flex: 1; }
+
+.names { display: grid; gap: 10px; margin-top: 18px; }
+.names button {
+  text-align: left; padding: 16px; border-radius: 14px; background: var(--card);
+  border: 1px solid var(--line); font-weight: 700; font-size: 17px; box-shadow: var(--shadow);
+}
+.lead { color: var(--muted); margin: 4px 0 0; }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(90px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px;
+  font-size: 14px; z-index: 20; max-width: calc(100% - 32px); text-align: center;
+}
+.pw { position: relative; flex: 1; }
+.pw input { padding-right: 48px; }
+.eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; display: grid; place-items: center; color: var(--muted); }
+.eye svg { width: 22px; height: 22px; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="layer"></div>
+
+<script>
+/* ============ CONFIG ============ */
+// Paste your Apps Script Web App URL here (ends in /exec). Leave empty for demo mode.
+const API_URL = 'https://script.google.com/macros/s/AKfycbxhZixc2m7UDAz_82cxBr6hIK9QwuP4hnysKaIkJu2-K6Hgh4H7yANYxvgxjdc6IIGR/exec';
+
+// Used in demo mode and before the first load. The live list comes from Code.gs.
+const DEFAULT_MEMBERS = ['Paul Withers', 'Cara Jeanne', 'Matt Poland', 'Dave Greene', 'Matt Duda', 'Anthony Reedy'];
+/* ================================ */
+
+const DEMO = !API_URL;
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+
+let state = { members: DEFAULT_MEMBERS, dates: [], votes: [], calendar: false };
+let me = store.get('me');
+let code = store.get('bandCode') || '';
+let sortMode = store.get('sort') || 'date';
+let loaded = false;
+let needCode = false;
+let busy = 0;
+
+const $app = document.getElementById('app');
+const $layer = document.getElementById('layer');
+
+/* ---------- helpers ---------- */
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const today = () => ymd(new Date());
+const isWeekend = s => [0, 6].includes(parse(s).getDay());
+const SLOT_LABEL = { evening: 'Evening', afternoon: 'Afternoon', open: 'Afternoon or evening' };
+
+function shortName(full) {
+  const first = full.split(' ')[0];
+  const dupes = state.members.filter(m => m.split(' ')[0] === first).length > 1;
+  const last = full.split(' ').slice(1).join(' ');
+  return dupes && last ? `${first} ${last[0]}.` : first;
+}
+
+function relDay(s) {
+  const diff = Math.round((parse(s) - parse(today())) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff < 7) return `in ${diff} days`;
+  const w = Math.round(diff / 7);
+  return `in ${w} week${w > 1 ? 's' : ''}`;
+}
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+const ICON = {
+  refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>',
+  more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-2.2 3.2M6.6 6.6C3.7 8.4 2 12 2 12s3.5 7 10 7c1.8 0 3.4-.5 4.8-1.3"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+};
+
+/* ---------- API ---------- */
+async function api(action, payload = {}) {
+  if (DEMO) return demoApi(action, payload);
+  let res;
+  if (action === 'list') {
+    res = await fetch(`${API_URL}?action=list&code=${encodeURIComponent(code)}&t=${Date.now()}`);
+  } else {
+    // text/plain body avoids a CORS preflight, which Apps Script can't answer
+    res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, code, member: me, ...payload }) });
+  }
+  const data = await res.json();
+  if (data.error) { const e = new Error(data.error); e.code = data.error; throw e; }
+  return data;
+}
+
+async function run(action, payload, optimistic) {
+  if (optimistic) { optimistic(); render(); }
+  busy++; renderBusy();
+  try {
+    state = await api(action, payload);
+    loaded = true;
+  } catch (e) {
+    if (e.code === 'unauthorized') { needCode = true; }
+    else toast(e.code === 'unknown_member' ? 'Your name is not on the member list.' : 'Could not save. Check your connection.');
+    refresh(true);
+  } finally {
+    busy--; render();
+  }
+}
+
+async function refresh(quiet) {
+  busy++; renderBusy();
+  try {
+    state = await api('list');
+    loaded = true; needCode = false;
+  } catch (e) {
+    if (e.code === 'unauthorized') needCode = true;
+    else if (!quiet) toast('Could not load. Check your connection.');
+  } finally {
+    busy--; render();
+  }
+}
+
+/* ---------- tallies ---------- */
+function voteOf(dateId, member) {
+  const v = state.votes.find(v => v.dateId === dateId && v.member === member);
+  return v ? v.vote : '';
+}
+
+function tally(d) {
+  const t = { yes: 0, maybe: 0, no: 0, aft: 0, eve: 0, pending: [] };
+  state.members.forEach(m => {
+    const v = voteOf(d.id, m);
+    if (!v) { t.pending.push(m); return; }
+    if (v === 'no') t.no++;
+    else if (v === 'maybe') t.maybe++;
+    else if (d.slot === 'open') {
+      if (v === 'aft' || v === 'yes') t.aft++;
+      if (v === 'eve' || v === 'yes') t.eve++;
+      t.yes++;
+    } else t.yes++;
+  });
+  t.best = d.slot === 'open' ? Math.max(t.aft, t.eve) : t.yes;
+  t.bestSlot = d.slot === 'open' ? (t.aft > t.eve ? 'afternoon' : 'evening') : d.slot;
+  t.allIn = t.best === state.members.length;
+  return t;
+}
+
+/* ---------- render ---------- */
+function renderBusy() {
+  const b = document.getElementById('refresh');
+  if (b) b.classList.toggle('spin', busy > 0);
+}
+
+function render() {
+  if (needCode) return renderCode();
+  if (!me || !state.members.includes(me)) return renderPicker();
+
+  const t0 = today();
+  const upcoming = state.dates.filter(d => d.date >= t0);
+  const locked = upcoming.filter(d => d.confirmed).sort((a, b) => a.date.localeCompare(b.date));
+  let options = upcoming.filter(d => !d.confirmed);
+  const scored = options.map(d => ({ d, t: tally(d) }));
+  scored.sort((a, b) => sortMode === 'best'
+    ? (b.t.best - a.t.best) || (b.t.maybe - a.t.maybe) || a.d.date.localeCompare(b.d.date)
+    : a.d.date.localeCompare(b.d.date));
+  const unanswered = upcoming.filter(d => !voteOf(d.id, me)).length;
+
+  $app.innerHTML = `
+    <header>
+      <h1>Band Practice</h1>
+      <div class="row">
+        <button class="icon-btn ${busy ? 'spin' : ''}" id="refresh" aria-label="Refresh">${ICON.refresh}</button>
+        <button class="who" id="who">${esc(shortName(me))} ▾</button>
+      </div>
+    </header>
+    ${DEMO ? '<div class="banner demo">Demo mode: changes stay on this phone. Add your API_URL to go live.</div>' : ''}
+    ${loaded && unanswered ? `<div class="banner">You haven't answered <b>${unanswered}</b> date${unanswered > 1 ? 's' : ''} yet.</div>` : ''}
+
+    ${locked.length ? `<h2>Next practice</h2>${locked.map(d => card(d, tally(d))).join('')}` : ''}
+
+    <h2>
+      <span>Options</span>
+      ${scored.length > 1 ? `<span class="seg">
+        <button data-sort="date" class="${sortMode === 'date' ? 'on' : ''}">By date</button>
+        <button data-sort="best" class="${sortMode === 'best' ? 'on' : ''}">Most free</button>
+      </span>` : ''}
+    </h2>
+    ${scored.length ? scored.map(x => card(x.d, x.t)).join('')
+      : `<div class="empty">${loaded ? 'No dates on the table.<br>Tap <b>Suggest dates</b> to get things going.' : 'Loading…'}</div>`}
+
+    <button class="fab" id="add">${ICON.plus} Suggest dates</button>
+  `;
+
+  $app.querySelector('#refresh').onclick = () => refresh();
+  $app.querySelector('#who').onclick = () => { me = null; store.del('me'); render(); };
+  $app.querySelector('#add').onclick = openAdd;
+  $app.querySelectorAll('[data-sort]').forEach(b => b.onclick = () => { sortMode = b.dataset.sort; store.set('sort', sortMode); render(); });
+  $app.querySelectorAll('[data-vote]').forEach(b => b.onclick = () => castVote(b.dataset.id, b.dataset.vote));
+  $app.querySelectorAll('[data-more]').forEach(b => b.onclick = () => openMore(b.dataset.more));
+}
+
+function card(d, t) {
+  const dt = parse(d.date);
+  const mine = voteOf(d.id, me);
+  const n = state.members.length;
+  const open = d.slot === 'open';
+  const slotText = d.confirmed ? SLOT_LABEL[d.confirmedSlot || d.slot] : SLOT_LABEL[d.slot];
+
+  const people = state.members.map(m => {
+    const v = voteOf(d.id, m);
+    let cls = '', extra = '';
+    if (v === 'no') cls = 'no';
+    else if (v === 'maybe') { cls = 'maybe'; extra = ' ?'; }
+    else if (v) {
+      cls = 'yes';
+      if (open) extra = v === 'aft' ? ' · aft' : v === 'eve' ? ' · eve' : '';
+    }
+    return `<span class="p ${cls} ${m === me ? 'me' : ''}">${esc(shortName(m))}${extra}</span>`;
+  }).join('');
+
+  const tallyHtml = open && !d.confirmed
+    ? `${t.best}/${n}<small>Aft ${t.aft} · Eve ${t.eve}</small>`
+    : `${t.best}/${n}<small>${t.maybe ? `${t.maybe} maybe` : 'can make it'}</small>`;
+
+  const btns = open
+    ? [['aft', 'yes', 'Aft'], ['eve', 'yes', 'Eve'], ['yes', 'yes', 'Either'], ['no', 'no', "Can't"]]
+    : [['yes', 'yes', '✓ Can'], ['maybe', 'maybe', '? Maybe'], ['no', 'no', "✗ Can't"]];
+
+  const waiting = t.pending.filter(m => m !== me);
+  return `
+  <div class="card ${d.confirmed ? 'locked' : t.allIn ? 'allin' : ''}">
+    <div class="top">
+      <div class="cal">
+        <div class="m">${dt.toLocaleDateString(undefined, { month: 'short' })}</div>
+        <div class="d">${dt.getDate()}</div>
+        <div class="w">${dt.toLocaleDateString(undefined, { weekday: 'short' })}</div>
+      </div>
+      <div class="info">
+        <div class="title">${esc(slotText)}</div>
+        <div class="sub">
+          ${d.confirmed ? '<span class="tag lock">Confirmed</span>' : t.allIn ? '<span class="tag go">Everyone’s in</span>' : ''}
+          ${relDay(d.date)}${d.proposedBy ? ` · from ${esc(shortName(d.proposedBy))}` : ''}${d.onCalendar ? ' · on calendar' : ''}
+        </div>
+      </div>
+      <div class="tally">${tallyHtml}</div>
+      <button class="icon-btn more" data-more="${esc(d.id)}" aria-label="More">${ICON.more}</button>
+    </div>
+    ${d.note ? `<div class="note">${esc(d.note)}</div>` : ''}
+    <div class="people">${people}</div>
+    ${waiting.length ? `<div class="waiting">Waiting on ${waiting.map(shortName).map(esc).join(', ')}</div>` : ''}
+    <div class="votes ${open ? 'four' : ''}">
+      ${btns.map(([v, cls, label]) => `<button data-id="${esc(d.id)}" data-vote="${v}" class="${cls} ${mine === v ? 'on' : ''}">${label}</button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function castVote(dateId, v) {
+  const next = voteOf(dateId, me) === v ? '' : v; // tap again to clear
+  run('vote', { dateId, vote: next }, () => {
+    state.votes = state.votes.filter(x => !(x.dateId === dateId && x.member === me));
+    if (next) state.votes.push({ dateId, member: me, vote: next });
+  });
+}
+
+function renderPicker() {
+  $app.innerHTML = `
+    <header><h1>Band Practice</h1></header>
+    <p class="lead">Who are you? This phone will remember.</p>
+    <div class="names">
+      ${state.members.map(m => `<button data-name="${esc(m)}">${esc(m)}</button>`).join('')}
+    </div>`;
+  $app.querySelectorAll('[data-name]').forEach(b => b.onclick = () => {
+    me = b.dataset.name; store.set('me', me); render();
+  });
+}
+
+function renderCode() {
+  $app.innerHTML = `
+    <header><h1>Band Practice</h1></header>
+    <p class="lead">Enter the band code to get in.</p>
+    ${code ? '<p class="hint" style="color:var(--no)">That code didn\u2019t work. Check for typos.</p>' : ''}
+    <form id="codeForm" class="row" style="margin-top:16px">
+      <div class="pw">
+        <input type="password" id="code" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Band code" value="${esc(code)}">
+        <button type="button" class="eye" id="eye" aria-label="Show code">${ICON.eye}</button>
+      </div>
+      <button class="btn primary">Go</button>
+    </form>`;
+  const $code = $app.querySelector('#code');
+  $app.querySelector('#eye').onclick = () => {
+    const show = $code.type === 'password';
+    $code.type = show ? 'text' : 'password';
+    $app.querySelector('#eye').innerHTML = show ? ICON.eyeOff : ICON.eye;
+    $app.querySelector('#eye').setAttribute('aria-label', show ? 'Hide code' : 'Show code');
+  };
+  $app.querySelector('#codeForm').onsubmit = e => {
+    e.preventDefault();
+    code = $app.querySelector('#code').value.trim();
+    store.set('bandCode', code);
+    needCode = false;
+    refresh();
+  };
+}
+
+/* ---------- sheets ---------- */
+function openSheet(html, wire) {
+  $layer.innerHTML = `<div class="overlay"><div class="sheet">${html}</div></div>`;
+  const ov = $layer.firstElementChild;
+  ov.onclick = e => { if (e.target === ov) closeSheet(); };
+  wire(ov.firstElementChild);
+}
+function closeSheet() { $layer.innerHTML = ''; }
+
+function openAdd() {
+  const picks = []; // {date, slot}
+  const draw = s => {
+    picks.sort((a, b) => a.date.localeCompare(b.date));
+    s.querySelector('.pending').innerHTML = picks.map((p, i) => {
+      const dt = parse(p.date);
+      const opts = isWeekend(p.date) ? ['afternoon', 'evening', 'open'] : ['evening', 'afternoon'];
+      const lbl = { evening: 'Eve', afternoon: 'Aft', open: 'Either' };
+      return `<div class="pitem">
+        <span class="lbl">${dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+        <span class="seg">${opts.map(o => `<button data-i="${i}" data-slot="${o}" class="${p.slot === o ? 'on' : ''}">${lbl[o]}</button>`).join('')}</span>
+        <button class="x" data-rm="${i}" aria-label="Remove">✕</button>
+      </div>`;
+    }).join('');
+    s.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { picks[b.dataset.i].slot = b.dataset.slot; draw(s); });
+    s.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { picks.splice(b.dataset.rm, 1); draw(s); });
+    const go = s.querySelector('#go');
+    go.disabled = !picks.length;
+    go.textContent = picks.length ? `Suggest ${picks.length} date${picks.length > 1 ? 's' : ''}` : 'Suggest';
+  };
+
+  openSheet(`
+    <h3>Suggest dates</h3>
+    <div class="row">
+      <input type="date" id="d" min="${today()}">
+      <button class="btn" id="addOne">Add</button>
+    </div>
+    <p class="hint">Add as many as you like. Weekends default to “Either” so people can pick afternoon or evening. You’re marked as available on the dates you suggest.</p>
+    <div class="pending"></div>
+    <input type="text" id="note" maxlength="200" placeholder="Note (optional), e.g. new song run-through">
+    <div class="footer">
+      <button class="btn" id="cancel">Cancel</button>
+      <button class="btn primary" id="go" disabled>Suggest</button>
+    </div>`, s => {
+    const input = s.querySelector('#d');
+    const add = () => {
+      const v = input.value;
+      if (!v) return;
+      if (v < today()) return toast('That date has passed.');
+      if (picks.some(p => p.date === v)) return toast('Already added.');
+      picks.push({ date: v, slot: isWeekend(v) ? 'open' : 'evening' });
+      input.value = '';
+      draw(s);
+    };
+    s.querySelector('#addOne').onclick = add;
+    input.onchange = add; // phones: picking a date adds it right away
+    s.querySelector('#cancel').onclick = closeSheet;
+    s.querySelector('#go').onclick = () => {
+      const note = s.querySelector('#note').value.trim();
+      closeSheet();
+      run('addDates', { dates: picks, note });
+      toast(`Suggested ${picks.length} date${picks.length > 1 ? 's' : ''}`);
+    };
+    draw(s);
+  });
+}
+
+function openMore(id) {
+  const d = state.dates.find(x => x.id === id);
+  if (!d) return;
+  const t = tally(d);
+  const label = parse(d.date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  const cal = state.calendar ? ' and add it to the band calendar' : '';
+  let btns = '';
+  if (d.confirmed) {
+    btns = `<button class="btn" data-act="unconfirm">Un-confirm</button>`;
+  } else if (d.slot === 'open') {
+    btns = `<button class="btn" data-act="confirm" data-slot="afternoon">Confirm afternoon (${t.aft}/${state.members.length})</button>
+            <button class="btn" data-act="confirm" data-slot="evening">Confirm evening (${t.eve}/${state.members.length})</button>`;
+  } else {
+    btns = `<button class="btn" data-act="confirm">Confirm this practice (${t.yes}/${state.members.length})</button>`;
+  }
+  openSheet(`
+    <h3>${esc(label)}</h3>
+    <div class="actions">
+      ${btns}
+      <button class="btn danger" data-act="remove">Remove this date</button>
+      <button class="btn" data-act="close">Cancel</button>
+    </div>
+    ${!d.confirmed && cal ? `<p class="hint">Confirming will lock it in${cal}.</p>` : ''}`, s => {
+    s.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
+      const act = b.dataset.act;
+      if (act === 'close') return closeSheet();
+      if (act === 'remove' && !confirm('Remove this date and everyone’s answers for it?')) return;
+      closeSheet();
+      run(act, { dateId: id, slot: b.dataset.slot }, () => {
+        if (act === 'remove') state.dates = state.dates.filter(x => x.id !== id);
+        if (act === 'confirm') { d.confirmed = true; d.confirmedSlot = d.slot === 'open' ? b.dataset.slot : d.slot; }
+        if (act === 'unconfirm') { d.confirmed = false; d.confirmedSlot = ''; }
+      });
+    });
+  });
+}
+
+/* ---------- demo backend (used when API_URL is empty) ---------- */
+function demoLoad() {
+  try { const s = JSON.parse(store.get('demoData')); if (s && s.dates) return s; } catch (e) {}
+  const plus = n => { const d = new Date(); d.setDate(d.getDate() + n); return ymd(d); };
+  const nextDow = (dow, weeks = 0) => { const d = new Date(); d.setDate(d.getDate() + ((dow - d.getDay() + 7) % 7 || 7) + weeks * 7); return ymd(d); };
+  const m = DEFAULT_MEMBERS;
+  const dates = [
+    { id: 'a1', date: nextDow(2), slot: 'evening', proposedBy: m[0], note: '' },
+    { id: 'a2', date: nextDow(4), slot: 'evening', proposedBy: m[0], note: '' },
+    { id: 'a3', date: nextDow(6, 1), slot: 'open', proposedBy: m[1], note: 'Could run the whole set' },
+    { id: 'a4', date: nextDow(3, 2), slot: 'evening', proposedBy: m[3], note: '' },
+  ].map(d => ({ ...d, createdAt: '', confirmed: false, confirmedSlot: '', onCalendar: false }));
+  const votes = [];
+  const v = (id, who, vote) => votes.push({ dateId: id, member: m[who], vote });
+  v('a1', 0, 'yes'); v('a1', 1, 'yes'); v('a1', 2, 'no'); v('a1', 3, 'yes');
+  v('a2', 0, 'yes'); v('a2', 1, 'yes'); v('a2', 2, 'yes'); v('a2', 3, 'maybe'); v('a2', 4, 'yes');
+  v('a3', 1, 'yes'); v('a3', 0, 'eve'); v('a3', 3, 'aft'); v('a3', 4, 'yes');
+  v('a4', 3, 'yes');
+  return { members: m, dates, votes, calendar: false };
+}
+
+async function demoApi(action, p) {
+  await new Promise(r => setTimeout(r, 150));
+  const s = demoLoad();
+  const setVote = (id, who, vote) => {
+    s.votes = s.votes.filter(x => !(x.dateId === id && x.member === who));
+    if (vote) s.votes.push({ dateId: id, member: who, vote });
+  };
+  const d = s.dates.find(x => x.id === p.dateId);
+  if (action === 'addDates') {
+    p.dates.forEach(x => {
+      let row = s.dates.find(y => y.date === x.date && y.slot === x.slot);
+      if (!row) {
+        row = { id: Math.random().toString(36).slice(2, 10), date: x.date, slot: x.slot, note: p.note || '', proposedBy: me, createdAt: new Date().toISOString(), confirmed: false, confirmedSlot: '', onCalendar: false };
+        s.dates.push(row);
+      }
+      setVote(row.id, me, 'yes');
+    });
+  } else if (action === 'vote') setVote(p.dateId, me, p.vote);
+  else if (action === 'confirm' && d) { d.confirmed = true; d.confirmedSlot = d.slot === 'open' ? (p.slot || 'evening') : d.slot; }
+  else if (action === 'unconfirm' && d) { d.confirmed = false; d.confirmedSlot = ''; }
+  else if (action === 'remove') { s.dates = s.dates.filter(x => x.id !== p.dateId); s.votes = s.votes.filter(x => x.dateId !== p.dateId); }
+  store.set('demoData', JSON.stringify(s));
+  return JSON.parse(JSON.stringify(s));
+}
+
+/* ---------- boot ---------- */
+render();
+refresh();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(true); });
+setInterval(() => { if (!document.hidden && !$layer.innerHTML) refresh(true); }, 60000);
+</script>
+</body>
+</html>
