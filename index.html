@@ -157,7 +157,7 @@ h2 {
 @keyframes up { from { transform: translateY(30px); opacity: .5; } }
 .sheet h3 { margin: 0 0 14px; font-size: 19px; }
 .row { display: flex; gap: 8px; align-items: center; }
-input[type=date], input[type=text], input[type=password] {
+input[type=text], input[type=password] {
   font: inherit; font-size: 16px; color: var(--ink); background: var(--bg);
   border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; width: 100%;
   min-height: 46px;
@@ -195,6 +195,29 @@ input[type=date], input[type=text], input[type=password] {
 .eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; display: grid; place-items: center; color: var(--muted); }
 .eye svg { width: 22px; height: 22px; }
 .hidden { display: none !important; }
+
+/* inline month calendar (replaces the native date picker) */
+.mcal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.mcal-head b { font-size: 16px; }
+.mcal-head button { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; color: var(--ink); }
+.mcal-head button:disabled { opacity: .25; }
+.mcal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.mcal-grid .dow { font-size: 11px; font-weight: 700; color: var(--muted); padding: 4px 0; }
+.mcal-grid .day { width: 42px; max-width: 100%; height: 42px; margin: 0 auto; border-radius: 50%; font-weight: 600; font-size: 15px; position: relative; transition: transform .08s; }
+.mcal-grid .day:active { transform: scale(.92); }
+.mcal-grid .day.today { box-shadow: inset 0 0 0 1.5px var(--muted); }
+.mcal-grid .day.on { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+.mcal-grid .day:disabled { opacity: .3; }
+.mcal-grid .day i { position: absolute; bottom: 4px; width: 5px; height: 5px; border-radius: 50%; left: 50%; }
+.mcal-grid .day i.dnb { background: var(--no); margin-left: -2.5px; }
+.mcal-grid .day i.has { background: var(--yes); margin-left: -2.5px; }
+.mcal-grid .day i.dnb + i.has { margin-left: 1px; }
+.mcal-grid .day i.dnb:has(+ i.has) { margin-left: -6px; }
+.mcal-grid .day.on i { box-shadow: 0 0 0 1.5px var(--accent-ink); }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+.legend span::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+.legend .l-dnb::before { background: var(--no); }
+.legend .l-has::before { background: var(--yes); }
 </style>
 </head>
 <body>
@@ -507,6 +530,51 @@ function closeSheet() { $layer.innerHTML = ''; }
 
 function openAdd() {
   const picks = []; // {date, slot}
+  const now = new Date();
+  const minMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const maxMonth = new Date(now.getFullYear(), now.getMonth() + 11, 1);
+  let view = new Date(minMonth);
+  const proposed = new Set(state.dates.map(d => d.date));
+
+  const drawCal = s => {
+    const y = view.getFullYear(), m = view.getMonth();
+    const first = new Date(y, m, 1).getDay();
+    const days = new Date(y, m + 1, 0).getDate();
+    const t0 = today();
+    let cells = '';
+    for (let i = 0; i < first; i++) cells += '<span></span>';
+    for (let d = 1; d <= days; d++) {
+      const v = ymd(new Date(y, m, d));
+      const on = picks.some(p => p.date === v);
+      const dots = (dnbOn(v).length ? '<i class="dnb"></i>' : '') + (proposed.has(v) ? '<i class="has"></i>' : '');
+      cells += `<button class="day${on ? ' on' : ''}${v === t0 ? ' today' : ''}" data-day="${v}" ${v < t0 ? 'disabled' : ''} aria-pressed="${on}">${d}${dots}</button>`;
+    }
+    s.querySelector('.mcal').innerHTML = `
+      <div class="mcal-head">
+        <button id="prev" aria-label="Previous month" ${view <= minMonth ? 'disabled' : ''}>‹</button>
+        <b>${view.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</b>
+        <button id="next" aria-label="Next month" ${view >= maxMonth ? 'disabled' : ''}>›</button>
+      </div>
+      <div class="mcal-grid">
+        ${['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(x => `<span class="dow">${x}</span>`).join('')}
+        ${cells}
+      </div>`;
+    s.querySelector('#prev').onclick = () => { view = new Date(y, m - 1, 1); drawCal(s); };
+    s.querySelector('#next').onclick = () => { view = new Date(y, m + 1, 1); drawCal(s); };
+    s.querySelectorAll('[data-day]').forEach(b => b.onclick = () => toggle(s, b.dataset.day));
+  };
+
+  const toggle = (s, v) => {
+    const i = picks.findIndex(p => p.date === v);
+    if (i >= 0) picks.splice(i, 1); // tap again to unselect
+    else {
+      picks.push({ date: v, slot: isWeekend(v) ? 'open' : 'evening' });
+      if (dnbOn(v).length) toast('Heads up: that day is marked DNB on the band calendar.');
+      else if (proposed.has(v)) toast('That date is already on the list.');
+    }
+    draw(s);
+  };
+
   const draw = s => {
     picks.sort((a, b) => a.date.localeCompare(b.date));
     s.querySelector('.pending').innerHTML = picks.map((p, i) => {
@@ -524,34 +592,23 @@ function openAdd() {
     const go = s.querySelector('#go');
     go.disabled = !picks.length;
     go.textContent = picks.length ? `Suggest ${picks.length} date${picks.length > 1 ? 's' : ''}` : 'Suggest';
+    drawCal(s);
   };
 
   openSheet(`
     <h3>Suggest dates</h3>
-    <div class="row">
-      <input type="date" id="d" min="${today()}">
-      <button class="btn" id="addOne">Add</button>
+    <div class="mcal"></div>
+    <div class="legend">
+      ${Object.keys(state.dnb || {}).length ? '<span class="l-dnb">DNB on band calendar</span>' : ''}
+      ${proposed.size ? '<span class="l-has">Already suggested</span>' : ''}
     </div>
-    <p class="hint">Add as many as you like. Weekends default to “Either” so people can pick afternoon or evening. You’re marked as available on the dates you suggest.</p>
+    <p class="hint">Tap days to select them, tap again to unselect. Weekends default to “Either” so people can pick afternoon or evening. You’re marked as available on the dates you suggest.</p>
     <div class="pending"></div>
     <input type="text" id="note" maxlength="200" placeholder="Note (optional), e.g. new song run-through">
     <div class="footer">
       <button class="btn" id="cancel">Cancel</button>
       <button class="btn primary" id="go" disabled>Suggest</button>
     </div>`, s => {
-    const input = s.querySelector('#d');
-    const add = () => {
-      const v = input.value;
-      if (!v) return;
-      if (v < today()) return toast('That date has passed.');
-      if (picks.some(p => p.date === v)) return toast('Already added.');
-      picks.push({ date: v, slot: isWeekend(v) ? 'open' : 'evening' });
-      input.value = '';
-      draw(s);
-      if (dnbOn(v).length) toast('Heads up: that day is marked DNB on the band calendar.');
-    };
-    s.querySelector('#addOne').onclick = add;
-    input.onchange = add; // phones: picking a date adds it right away
     s.querySelector('#cancel').onclick = closeSheet;
     s.querySelector('#go').onclick = () => {
       const note = s.querySelector('#note').value.trim();
