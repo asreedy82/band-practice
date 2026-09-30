@@ -117,6 +117,19 @@ h2 {
 .tally small { display: block; font-weight: 500; font-size: 12px; color: var(--muted); }
 .more { margin: -6px -8px 0 0; }
 
+/* ruled-out dates (someone can't make it): one compact row, tap to expand */
+.mini {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 9px 12px; margin-bottom: 8px; opacity: .8;
+}
+.mini .md { flex: none; width: 74px; font-weight: 700; font-size: 14px; }
+.mini .why { flex: 1; min-width: 0; font-size: 13px; color: var(--no); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini .tag { margin: 0 4px 0 0; }
+.mini .ct { font-size: 13px; font-weight: 700; color: var(--muted); }
+.mini .chev { color: var(--muted); font-size: 12px; }
+.collapse { font-size: 12px; font-weight: 600; color: var(--muted); padding: 0 0 8px; }
+
 .people { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
 .p { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--none-bg); color: var(--muted); }
 .p.yes { background: var(--yes-bg); color: var(--yes); }
@@ -244,6 +257,7 @@ let state = { members: DEFAULT_MEMBERS, dates: [], votes: [], calendar: false, d
 let me = store.get('me');
 let code = store.get('bandCode') || '';
 let sortMode = store.get('sort') || 'date';
+const expanded = new Set(); // ruled-out dates the user tapped open (this visit only)
 let loaded = false;
 let needCode = false;
 let busy = 0;
@@ -378,7 +392,10 @@ function render() {
   scored.sort((a, b) => sortMode === 'best'
     ? (b.t.best - a.t.best) || (b.t.maybe - a.t.maybe) || a.d.date.localeCompare(b.d.date)
     : a.d.date.localeCompare(b.d.date));
-  const unanswered = upcoming.filter(d => !voteOf(d.id, me)).length;
+  const live = scored.filter(x => !x.t.no);
+  const out = scored.filter(x => x.t.no).sort((a, b) => a.d.date.localeCompare(b.d.date));
+  // ruled-out dates don't nag you for an answer
+  const unanswered = upcoming.filter(d => !voteOf(d.id, me) && (d.confirmed || !tally(d).no)).length;
 
   $app.innerHTML = `
     <header>
@@ -395,13 +412,16 @@ function render() {
 
     <h2>
       <span>Options</span>
-      ${scored.length > 1 ? `<span class="seg">
+      ${live.length > 1 ? `<span class="seg">
         <button data-sort="date" class="${sortMode === 'date' ? 'on' : ''}">By date</button>
         <button data-sort="best" class="${sortMode === 'best' ? 'on' : ''}">Most free</button>
       </span>` : ''}
     </h2>
-    ${scored.length ? scored.map(x => card(x.d, x.t)).join('')
-      : `<div class="empty">${loaded ? 'No dates on the table.<br>Tap <b>Suggest dates</b> to get things going.' : 'Loading…'}</div>`}
+    ${live.length ? live.map(x => card(x.d, x.t)).join('')
+      : `<div class="empty">${!loaded ? 'Loading…' : out.length ? 'Every date has at least one “can’t”.<br>Tap <b>Suggest dates</b> to add more.' : 'No dates on the table.<br>Tap <b>Suggest dates</b> to get things going.'}</div>`}
+
+    ${out.length ? `<h2><span>Someone can’t (${out.length})</span></h2>
+      ${out.map(x => expanded.has(x.d.id) ? card(x.d, x.t, true) : mini(x.d, x.t)).join('')}` : ''}
 
     <button class="fab" id="add">${ICON.plus} Suggest dates</button>
   `;
@@ -412,9 +432,24 @@ function render() {
   $app.querySelectorAll('[data-sort]').forEach(b => b.onclick = () => { sortMode = b.dataset.sort; store.set('sort', sortMode); render(); });
   $app.querySelectorAll('[data-vote]').forEach(b => b.onclick = () => castVote(b.dataset.id, b.dataset.vote));
   $app.querySelectorAll('[data-more]').forEach(b => b.onclick = () => openMore(b.dataset.more));
+  $app.querySelectorAll('[data-expand]').forEach(b => b.onclick = () => { expanded.add(b.dataset.expand); render(); });
+  $app.querySelectorAll('[data-collapse]').forEach(b => b.onclick = () => { expanded.delete(b.dataset.collapse); render(); });
 }
 
-function card(d, t) {
+function mini(d, t) {
+  const dt = parse(d.date);
+  const cant = state.members.filter(m => voteOf(d.id, m) === 'no').map(shortName);
+  const label = dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  return `
+  <button class="mini" data-expand="${esc(d.id)}">
+    <span class="md">${esc(label)}</span>
+    <span class="why">${dnbOn(d.date).length ? '<span class="tag dnb">DNB</span>' : ''}✗ ${cant.map(esc).join(', ')}</span>
+    <span class="ct">${t.best}/${state.members.length}</span>
+    <span class="chev">▾</span>
+  </button>`;
+}
+
+function card(d, t, ruledOut) {
   const dt = parse(d.date);
   const mine = voteOf(d.id, me);
   const n = state.members.length;
@@ -445,6 +480,7 @@ function card(d, t) {
   const dnb = dnbOn(d.date);
   return `
   <div class="card ${d.confirmed ? 'locked' : t.allIn ? 'allin' : ''}">
+    ${ruledOut ? `<button class="collapse" data-collapse="${esc(d.id)}">▴ Collapse</button>` : ''}
     <div class="top">
       <div class="cal">
         <div class="m">${dt.toLocaleDateString(undefined, { month: 'short' })}</div>
